@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suivi Groupe - Tiger Edition (Lecture)</title>
+    <style>
+        :root {
+            --bg-dark: #1A1A1D;
+            --row-blue: #D6EAF8;
+        }
+
+        body { font-family: Arial, sans-serif; margin: 0; background-color: #f4f4f4; }
+
+        /* ÉCRAN DE VERROUILLAGE */
+        #lock-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-dark); color: white;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 1000;
+        }
+
+        /* BARRE SUPÉRIEURE */
+        .top-bar {
+            background-color: var(--bg-dark); color: white;
+            padding: 15px; display: flex; align-items: center; gap: 15px;
+        }
+
+        .status-badge { background: #555; padding: 5px 10px; border-radius: 4px; font-size: 12px; }
+
+        /* TABLEAU */
+        .table-container { overflow-x: auto; margin: 10px; background: white; }
+        table { border-collapse: collapse; width: 100%; min-width: 1000px; }
+        th { background-color: var(--bg-dark); color: white; padding: 10px; position: sticky; top: 0; }
+        td { padding: 8px; text-align: center; border-bottom: 1px solid #ddd; }
+        tr:nth-child(even) { background-color: var(--row-blue); }
+
+        .member-name {
+            text-align: left; font-weight: bold; position: sticky; left: 0;
+            background: inherit; padding-left: 15px;
+        }
+
+        .checkbox-cell { font-size: 20px; color: #333; cursor: default; }
+        
+        #main-content { display: none; } /* Caché par défaut */
+    </style>
+</head>
+<body>
+
+<div id="lock-screen">
+    <h2>Accès Restreint</h2>
+    <p>Veuillez entrer le mot de passe pour consulter :</p>
+    <input type="password" id="passInput" style="padding: 10px; width: 200px; text-align: center;">
+    <button onclick="checkPassword()" style="margin-top: 15px; padding: 10px 20px; cursor: pointer;">Entrer</button>
+    <p id="error-msg" style="color: #E74C3C; margin-top: 10px;"></p>
+</div>
+
+<div id="main-content">
+    <div class="top-bar">
+        <span style="font-size: 1.2em; font-weight: bold;">TIGER EDITION</span>
+        <span class="status-badge">Mode Lecture Seule</span>
+        <input type="text" id="searchBar" onkeyup="filterTable()" placeholder="Rechercher un membre..." style="margin-left: auto; padding: 8px;">
+    </div>
+
+    <div class="table-container">
+        <table id="memberTable">
+            <thead>
+                <tr id="headerRow">
+                    <th class="member-name">MEMBRES</th>
+                    </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const BIN_ID = "69e0de7aaaba88219706a6ab";
+    const API_KEY = "$2a$10$zxqDoLoDeBgghZydBmWJvutJpJlHwPKysLqtcxgnR6N4rrnFMUz9O";
+    const URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+    const MY_PASSWORD = "Alias"; // <--- CHANGE TON MOT DE PASSE ICI
+
+    let allData = [];
+    const moisNoms = ["Janv", "Févr", "Mars", "Avril", "Mai", "Juin", "Juil", "Août", "Sept", "Oct", "Nov", "Déc"];
+    const colonnesMois = [];
+    for(let a=2024; a<=2030; a++) {
+        moisNoms.forEach(m => colonnesMois.push(`${m} ${a.toString().slice(-2)}`));
+    }
+
+    // Générer les headers
+    const headerRow = document.getElementById('headerRow');
+    colonnesMois.forEach(m => {
+        let th = document.createElement('th');
+        th.innerText = m;
+        headerRow.appendChild(th);
+    });
+
+    function checkPassword() {
+        const input = document.getElementById('passInput').value;
+        if(input === MY_PASSWORD) {
+            document.getElementById('lock-screen').style.display = 'none';
+            document.getElementById('main-content').style.display = 'block';
+            loadData();
+        } else {
+            document.getElementById('error-msg').innerText = "Mot de passe incorrect.";
+        }
+    }
+
+    async function loadData() {
+        try {
+            const res = await fetch(`${URL}/latest`, { headers: { "X-Master-Key": API_KEY } });
+            const json = await res.json();
+            allData = json.record.data || [];
+            renderTable();
+        } catch (e) { console.error("Erreur:", e); }
+    }
+
+    function renderTable(data = allData) {
+        const body = document.getElementById('tableBody');
+        body.innerHTML = "";
+
+        // Tri alphabétique
+        data.sort((a, b) => a[0].split(" ").pop().localeCompare(b[0].split(" ").pop()));
+
+        data.forEach(row => {
+            let tr = document.createElement('tr');
+            let tdName = document.createElement('td');
+            tdName.className = "member-name";
+            tdName.innerText = row[0];
+            tr.appendChild(tdName);
+
+            for(let i=0; i < colonnesMois.length; i++) {
+                let td = document.createElement('td');
+                td.className = "checkbox-cell";
+                let val = row[i+1];
+                // Affichage simple sans fonction onclick
+                td.innerText = (val === 1 || val === "X" || val === "☑") ? "☑" : "☐";
+                tr.appendChild(td);
+            }
+            body.appendChild(tr);
+        });
+    }
+
+    function filterTable() {
+        let q = document.getElementById('searchBar').value.toLowerCase();
+        renderTable(allData.filter(r => r[0].toLowerCase().includes(q)));
+    }
+</script>
+</body>
+</html>
