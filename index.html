@@ -3,71 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Suivi Groupe - Tiger Edition (Lecture)</title>
+    <title>Suivi Groupe - Tiger Edition</title>
     <style>
         :root {
             --bg-dark: #1A1A1D;
-            --row-blue: #D6EAF8;
+            --header-blue: #2C3E50;
+            --green-success: #27AE60;
+            --border-color: #D5DBDB;
         }
 
-        body { font-family: Arial, sans-serif; margin: 0; background-color: #f4f4f4; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-dark);
+            color: white;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
 
         /* ÉCRAN DE VERROUILLAGE */
         #lock-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: var(--bg-dark); color: white;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            z-index: 1000;
+            z-index: 2000;
         }
 
-        /* BARRE SUPÉRIEURE */
-        .top-bar {
-            background-color: var(--bg-dark); color: white;
-            padding: 15px; display: flex; align-items: center; gap: 15px;
-        }
-
-        .status-badge { background: #555; padding: 5px 10px; border-radius: 4px; font-size: 12px; }
-
-        /* TABLEAU */
-        .table-container { overflow-x: auto; margin: 10px; background: white; }
-        table { border-collapse: collapse; width: 100%; min-width: 1000px; }
-        th { background-color: var(--bg-dark); color: white; padding: 10px; position: sticky; top: 0; }
-        td { padding: 8px; text-align: center; border-bottom: 1px solid #ddd; }
-        tr:nth-child(even) { background-color: var(--row-blue); }
-
-        .member-name {
-            text-align: left; font-weight: bold; position: sticky; left: 0;
-            background: inherit; padding-left: 15px;
-        }
-
-        .checkbox-cell { font-size: 20px; color: #333; cursor: default; }
+        .lock-box { background: #2C3E50; padding: 40px; border-radius: 12px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         
-        #main-content { display: none; } /* Caché par défaut */
+        input[type="password"], input[type="text"] {
+            padding: 12px; border-radius: 5px; border: 1px solid #444;
+            background: #1A1A1D; color: white; outline: none; margin: 10px 0;
+        }
+
+        button {
+            padding: 12px 25px; background: var(--green-success); color: white;
+            border: none; border-radius: 5px; cursor: pointer; font-weight: bold;
+        }
+
+        /* CONTENU PRINCIPAL */
+        #main-content { display: none; flex-direction: column; height: 100%; }
+
+        header {
+            padding: 15px 20px; background: #111;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+
+        .status-badge { background: #555; padding: 5px 12px; border-radius: 20px; font-size: 12px; color: #F1C40F; }
+
+        /* TABLEAU AVEC VOLETS FIXES */
+        .table-container {
+            flex-grow: 1; overflow: auto; margin: 15px;
+            background: white; border-radius: 8px;
+        }
+
+        table { border-collapse: separate; border-spacing: 0; width: 100%; color: #333; }
+
+        th, td {
+            border-right: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px; text-align: center; min-width: 90px;
+        }
+
+        thead th {
+            position: sticky; top: 0; background-color: var(--header-blue);
+            color: white; z-index: 10; font-size: 0.85rem;
+        }
+
+        .sticky-col {
+            position: sticky; left: 0; background-color: #F8F9F9;
+            z-index: 11; min-width: 220px; text-align: left; font-weight: bold;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+
+        thead th.sticky-col { z-index: 12; background-color: var(--header-blue); }
+
+        tr:nth-child(even) .sticky-col { background-color: #EBEDEF; }
+        tr:nth-child(even) td { background-color: #F4F6F6; }
+
+        .checkbox-cell { font-size: 1.2rem; }
+        .icon-check { color: var(--green-success); font-weight: bold; }
+        .icon-empty { color: #ABB2B9; }
+
     </style>
 </head>
 <body>
 
 <div id="lock-screen">
-    <h2>Accès Restreint</h2>
-    <p>Veuillez entrer le mot de passe pour consulter :</p>
-    <input type="password" id="passInput" style="padding: 10px; width: 200px; text-align: center;">
-    <button onclick="checkPassword()" style="margin-top: 15px; padding: 10px 20px; cursor: pointer;">Entrer</button>
-    <p id="error-msg" style="color: #E74C3C; margin-top: 10px;"></p>
+    <div class="lock-box">
+        <h2 style="color: #F1C40F;">TIGER EDITION</h2>
+        <p>Entrez le mot de passe de consultation :</p>
+        <input type="password" id="passInput" placeholder="Mot de passe...">
+        <br>
+        <button onclick="checkPassword()">ACCÉDER AU SUIVI</button>
+        <p id="error-msg" style="color: #E74C3C; margin-top: 15px; font-size: 14px;"></p>
+    </div>
 </div>
 
 <div id="main-content">
-    <div class="top-bar">
-        <span style="font-size: 1.2em; font-weight: bold;">TIGER EDITION</span>
-        <span class="status-badge">Mode Lecture Seule</span>
-        <input type="text" id="searchBar" onkeyup="filterTable()" placeholder="Rechercher un membre..." style="margin-left: auto; padding: 8px;">
-    </div>
+    <header>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <span style="font-weight: bold; letter-spacing: 1px;">TIGER EDITION</span>
+            <span class="status-badge">MODE CONSULTATION</span>
+        </div>
+        <input type="text" id="searchBar" onkeyup="filterTable()" placeholder="🔍 Rechercher un membre...">
+    </header>
 
     <div class="table-container">
         <table id="memberTable">
             <thead>
                 <tr id="headerRow">
-                    <th class="member-name">MEMBRES</th>
-                    </tr>
+                    <th class="sticky-col">MEMBRES</th>
+                </tr>
             </thead>
             <tbody id="tableBody"></tbody>
         </table>
@@ -75,10 +124,11 @@
 </div>
 
 <script>
+    // --- CONFIGURATION ---
     const BIN_ID = "69e0de7aaaba88219706a6ab";
     const API_KEY = "$2a$10$zxqDoLoDeBgghZydBmWJvutJpJlHwPKysLqtcxgnR6N4rrnFMUz9O";
     const URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
-    const MY_PASSWORD = "Alias"; // <--- CHANGE TON MOT DE PASSE ICI
+    const MY_PASSWORD = "Alias"; 
 
     let allData = [];
     const moisNoms = ["Janv", "Févr", "Mars", "Avril", "Mai", "Juin", "Juil", "Août", "Sept", "Oct", "Nov", "Déc"];
@@ -87,7 +137,7 @@
         moisNoms.forEach(m => colonnesMois.push(`${m} ${a.toString().slice(-2)}`));
     }
 
-    // Générer les headers
+    // Générer l'en-tête des mois
     const headerRow = document.getElementById('headerRow');
     colonnesMois.forEach(m => {
         let th = document.createElement('th');
@@ -95,56 +145,78 @@
         headerRow.appendChild(th);
     });
 
+    // Vérification mot de passe
     function checkPassword() {
         const input = document.getElementById('passInput').value;
         if(input === MY_PASSWORD) {
             document.getElementById('lock-screen').style.display = 'none';
-            document.getElementById('main-content').style.display = 'block';
+            document.getElementById('main-content').style.display = 'flex';
             loadData();
         } else {
-            document.getElementById('error-msg').innerText = "Mot de passe incorrect.";
+            document.getElementById('error-msg').innerText = "❌ Mot de passe incorrect.";
         }
     }
 
+    // Charger les données depuis JSONBin
     async function loadData() {
         try {
             const res = await fetch(`${URL}/latest`, { headers: { "X-Master-Key": API_KEY } });
             const json = await res.json();
             allData = json.record.data || [];
             renderTable();
-        } catch (e) { console.error("Erreur:", e); }
+        } catch (e) {
+            console.error("Erreur de chargement:", e);
+            alert("Erreur de connexion à la base de données.");
+        }
     }
 
+    // Affichage du tableau
     function renderTable(data = allData) {
         const body = document.getElementById('tableBody');
         body.innerHTML = "";
 
-        // Tri alphabétique
-        data.sort((a, b) => a[0].split(" ").pop().localeCompare(b[0].split(" ").pop()));
+        // Tri alphabétique par le nom (le premier élément de chaque tableau)
+        data.sort((a, b) => a[0].localeCompare(b[0]));
 
         data.forEach(row => {
             let tr = document.createElement('tr');
+            
+            // Colonne Nom (Sticky)
             let tdName = document.createElement('td');
-            tdName.className = "member-name";
+            tdName.className = "sticky-col";
             tdName.innerText = row[0];
             tr.appendChild(tdName);
 
+            // Cases des mois
             for(let i=0; i < colonnesMois.length; i++) {
                 let td = document.createElement('td');
                 td.className = "checkbox-cell";
                 let val = row[i+1];
-                // Affichage simple sans fonction onclick
-                td.innerText = (val === 1 || val === "X" || val === "☑") ? "☑" : "☐";
+                
+                // Vérifie si la case est cochée (1, "X", "☑" ou 1 numérique)
+                if (val == 1 || val === "X" || val === "☑") {
+                    td.innerHTML = '<span class="icon-check">☑</span>';
+                } else {
+                    td.innerHTML = '<span class="icon-empty">☐</span>';
+                }
                 tr.appendChild(td);
             }
             body.appendChild(tr);
         });
     }
 
+    // Filtre de recherche
     function filterTable() {
         let q = document.getElementById('searchBar').value.toLowerCase();
-        renderTable(allData.filter(r => r[0].toLowerCase().includes(q)));
+        const filtered = allData.filter(r => r[0].toLowerCase().includes(q));
+        renderTable(filtered);
     }
+
+    // Permettre de valider le mot de passe avec la touche "Entrée"
+    document.getElementById("passInput").addEventListener("keyup", function(event) {
+        if (event.key === "Enter") { checkPassword(); }
+    });
 </script>
+
 </body>
 </html>
