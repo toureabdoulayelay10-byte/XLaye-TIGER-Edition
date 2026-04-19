@@ -13,7 +13,7 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             background-color: var(--bg-dark);
             color: white;
             margin: 0;
@@ -53,7 +53,6 @@
 
         .status-badge { background: #555; padding: 5px 12px; border-radius: 20px; font-size: 12px; color: #F1C40F; }
 
-        /* TABLEAU AVEC VOLETS FIXES */
         .table-container {
             flex-grow: 1; overflow: auto; margin: 15px;
             background: white; border-radius: 8px;
@@ -83,10 +82,8 @@
         tr:nth-child(even) .sticky-col { background-color: #EBEDEF; }
         tr:nth-child(even) td { background-color: #F4F6F6; }
 
-        .checkbox-cell { font-size: 1.2rem; }
-        .icon-check { color: var(--green-success); font-weight: bold; }
-        .icon-empty { color: #ABB2B9; }
-
+        .icon-check { color: var(--green-success); font-weight: bold; font-size: 1.2rem; }
+        .icon-empty { color: #ABB2B9; font-size: 1.2rem; }
     </style>
 </head>
 <body>
@@ -106,7 +103,7 @@
     <header>
         <div style="display: flex; align-items: center; gap: 15px;">
             <span style="font-weight: bold; letter-spacing: 1px;">TIGER EDITION</span>
-            <span class="status-badge">MODE CONSULTATION</span>
+            <span class="status-badge">ACTUALISATION AUTO (30s)</span>
         </div>
         <input type="text" id="searchBar" onkeyup="filterTable()" placeholder="🔍 Rechercher un membre...">
     </header>
@@ -137,7 +134,7 @@
         moisNoms.forEach(m => colonnesMois.push(`${m} ${a.toString().slice(-2)}`));
     }
 
-    // Générer l'en-tête des mois
+    // Initialisation de l'en-tête (une seule fois)
     const headerRow = document.getElementById('headerRow');
     colonnesMois.forEach(m => {
         let th = document.createElement('th');
@@ -145,13 +142,15 @@
         headerRow.appendChild(th);
     });
 
-    // Vérification mot de passe
+    // Fonction de vérification du mot de passe
     function checkPassword() {
         const input = document.getElementById('passInput').value;
         if(input === MY_PASSWORD) {
             document.getElementById('lock-screen').style.display = 'none';
             document.getElementById('main-content').style.display = 'flex';
             loadData();
+            // Lancer la synchro automatique toutes les 30 secondes
+            setInterval(loadData, 30000);
         } else {
             document.getElementById('error-msg').innerText = "❌ Mot de passe incorrect.";
         }
@@ -159,42 +158,46 @@
 
     // Charger les données depuis JSONBin
     async function loadData() {
+        // On stoppe l'actualisation si l'utilisateur fait une recherche
+        if (document.getElementById('searchBar').value !== "") return;
+
         try {
-            const res = await fetch(`${URL}/latest`, { headers: { "X-Master-Key": API_KEY } });
+            const res = await fetch(`${URL}/latest`, { 
+                headers: { "X-Master-Key": API_KEY },
+                cache: "no-store" 
+            });
             const json = await res.json();
+            // Structure JSONBin v3 : les données sont dans json.record.data
             allData = json.record.data || [];
             renderTable();
         } catch (e) {
             console.error("Erreur de chargement:", e);
-            alert("Erreur de connexion à la base de données.");
         }
     }
 
-    // Affichage du tableau
+    // Dessiner le tableau
     function renderTable(data = allData) {
         const body = document.getElementById('tableBody');
         body.innerHTML = "";
 
-        // Tri alphabétique par le nom (le premier élément de chaque tableau)
-        data.sort((a, b) => a[0].localeCompare(b[0]));
+        // Tri alphabétique par le nom
+        const sorted = [...data].sort((a, b) => a[0].localeCompare(b[0]));
 
-        data.forEach(row => {
+        sorted.forEach(row => {
             let tr = document.createElement('tr');
             
-            // Colonne Nom (Sticky)
+            // Colonne Nom fixe
             let tdName = document.createElement('td');
             tdName.className = "sticky-col";
             tdName.innerText = row[0];
             tr.appendChild(tdName);
 
-            // Cases des mois
+            // Cases des mois (row[1] à row[X])
             for(let i=0; i < colonnesMois.length; i++) {
                 let td = document.createElement('td');
-                td.className = "checkbox-cell";
                 let val = row[i+1];
                 
-                // Vérifie si la case est cochée (1, "X", "☑" ou 1 numérique)
-                if (val == 1 || val === "X" || val === "☑") {
+                if (val == 1) {
                     td.innerHTML = '<span class="icon-check">☑</span>';
                 } else {
                     td.innerHTML = '<span class="icon-empty">☐</span>';
@@ -212,7 +215,7 @@
         renderTable(filtered);
     }
 
-    // Permettre de valider le mot de passe avec la touche "Entrée"
+    // Entrée clavier pour le mot de passe
     document.getElementById("passInput").addEventListener("keyup", function(event) {
         if (event.key === "Enter") { checkPassword(); }
     });
